@@ -184,6 +184,9 @@ out:
 		case C.RD_KAFKA_EVENT_ERROR:
 			// Error event
 			cErr := C.rd_kafka_event_error(rkev)
+			if cErr == C.RD_KAFKA_RESP_ERR__MAX_POLL_EXCEEDED {
+				panic("ERROR MAXPOLL")
+			}
 			if cErr == C.RD_KAFKA_RESP_ERR__PARTITION_EOF {
 				crktpar := C.rd_kafka_event_topic_partition(rkev)
 				if crktpar == nil {
@@ -210,7 +213,11 @@ out:
 				retval = fatalErr
 
 			} else {
-				retval = newErrorFromCString(cErr, C.rd_kafka_event_error_string(rkev))
+				testError := newErrorFromCString(cErr, C.rd_kafka_event_error_string(rkev))
+				retval = testError
+				if testError.Code() == ErrMaxPollExceeded {
+					panic("Error MaxPollExceeded")
+				}
 			}
 
 		case C.RD_KAFKA_EVENT_STATS:
